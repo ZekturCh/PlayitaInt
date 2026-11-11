@@ -11,7 +11,13 @@ npm ci
 npm run dev
 ```
 
-Abre la dirección que muestra Vite. Usa **Ver baile demo** para reproducir la secuencia completa. Para probar con tu rostro, elige **Activar cámara**, concede el permiso y mira al frente durante uno o dos segundos. **Desactivar cámara** detiene el video y retira los personajes capturados.
+Abre la dirección que muestra Vite. La escena llena la ventana. Al abrirla, el navegador pide acceso a la cámara. Si concedes el permiso, mira al frente durante uno o dos segundos para aparecer en la playa. Si la cámara no está disponible, se muestra el personaje de demostración.
+
+Atajos para operar la instalación:
+
+- **C** activa o desactiva la cámara.
+- **D** desactiva la cámara y reproduce el baile de demostración.
+- **F** entra o sale de pantalla completa.
 
 ## Cómo funciona
 

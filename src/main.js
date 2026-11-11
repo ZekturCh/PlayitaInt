@@ -4,14 +4,7 @@ import { createDancers } from './dancers.js';
 
 const stage = document.querySelector('#stage');
 const video = document.querySelector('#camera');
-const cameraButton = document.querySelector('#camera-button');
-const demoButton = document.querySelector('#demo-button');
-const fullscreenButton = document.querySelector('#fullscreen');
 const status = document.querySelector('#status');
-const capturePanel = document.querySelector('#capture');
-const captureLabel = document.querySelector('#capture-label');
-const modeLabel = document.querySelector('#mode-label');
-const modeDot = document.querySelector('#mode-dot');
 
 const beach = createBeach(document.querySelector('#beach'));
 let dancers;
@@ -19,8 +12,6 @@ try {
   dancers = createDancers(document.querySelector('#dancers'));
 } catch (error) {
   console.error(error);
-  cameraButton.disabled = true;
-  demoButton.disabled = true;
   status.textContent = 'La escena 3D requiere WebGL. Prueba con otro navegador o equipo.';
 }
 
@@ -47,19 +38,14 @@ function demo(now, idle = false) {
   demoUntil = idle ? 0 : now + 11;
 }
 
-function stopCamera(message = 'Cámara desactivada. Puedes volver a activarla cuando quieras.') {
+function stopCamera(message = 'Cámara desactivada. Presiona C para activarla.') {
   generation++;
   pending = false;
-  const activeStream = stream;
+  stream?.getTracks().forEach(track => track.stop());
   stream = null;
-  activeStream?.getTracks().forEach(track => track.stop());
   video.srcObject = null;
   capture?.clear();
   capture = null;
-  capturePanel.hidden = true;
-  modeDot.classList.remove('live');
-  modeLabel.textContent = 'Modo demo';
-  cameraButton.textContent = 'Activar cámara';
   dancers.clear();
   demo(clock(), true);
   status.textContent = message;
@@ -72,7 +58,6 @@ async function startCamera() {
   }
   const request = ++generation;
   pending = true;
-  cameraButton.textContent = 'Cancelar';
   status.textContent = 'Solicitando acceso a la cámara…';
 
   try {
@@ -86,7 +71,7 @@ async function startCamera() {
     stream = input;
     for (const track of input.getVideoTracks()) {
       track.addEventListener('ended', () => {
-        if (request === generation) stopCamera('Se desconectó la cámara. Puedes intentar activarla de nuevo.');
+        if (request === generation) stopCamera('Se desconectó la cámara. Presiona C para reintentar.');
       }, { once: true });
     }
     video.srcObject = input;
@@ -107,56 +92,50 @@ async function startCamera() {
     demoUntil = 0;
     capture = createCapture(video, detector, face => {
       if (dancers.liveCount() >= 2) return false;
-      dancers.clear(avatar => avatar.demo);
       dancers.add(face, clock());
       return true;
     });
     pending = false;
-    capturePanel.hidden = false;
-    modeDot.classList.add('live');
-    modeLabel.textContent = 'Cámara activa';
-    cameraButton.textContent = 'Desactivar cámara';
   } catch (error) {
     if (request !== generation) return;
-    console.error(error);
     const message = {
-      NotAllowedError: 'Permite el acceso a la cámara en el navegador para participar.',
+      NotAllowedError: 'Permite el acceso a la cámara en el navegador y presiona C.',
       NotFoundError: 'No encontramos una cámara conectada.',
       NotReadableError: 'La cámara está ocupada o no se pudo abrir.',
-    }[error.name] ?? 'No pudimos iniciar la cámara. Vuelve a intentarlo.';
-    stopCamera(message);
+    }[error.name];
+    if (!message) console.error(error);
+    stopCamera(message ?? 'No pudimos iniciar la cámara. Presiona C para reintentar.');
   }
 }
 
-if (dancers) {
-  demo(clock(), true);
-  cameraButton.addEventListener('click', () => {
-    if (pending || stream) stopCamera();
-    else void startCamera();
-  });
-  demoButton.addEventListener('click', () => {
-    if (stream || pending) stopCamera();
-    demo(clock());
-    status.textContent = 'El cuerpo se desvanece y la cabeza sigue bailando.';
-  });
-  window.addEventListener('pagehide', () => {
-    if (stream || pending) stopCamera();
-  });
-}
-
-fullscreenButton.hidden = !document.fullscreenEnabled;
-fullscreenButton.addEventListener('click', async () => {
+async function toggleFullscreen() {
+  if (!document.fullscreenEnabled) return;
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
     else await document.documentElement.requestFullscreen();
   } catch {
     status.textContent = 'El navegador no pudo activar la pantalla completa.';
   }
+}
+
+window.addEventListener('keydown', event => {
+  if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
+  const key = event.key.toLowerCase();
+  if (key === 'f') void toggleFullscreen();
+  if (!dancers) return;
+  if (key === 'c') {
+    if (pending || stream) stopCamera();
+    else void startCamera();
+  }
+  if (key === 'd') {
+    if (stream || pending) stopCamera();
+    demo(clock());
+    status.textContent = 'El cuerpo se desvanece y la cabeza sigue bailando.';
+  }
 });
-document.addEventListener('fullscreenchange', () => {
-  const label = document.fullscreenElement ? 'Salir de pantalla completa' : 'Pantalla completa';
-  document.querySelector('#fullscreen-label').textContent = label;
-  fullscreenButton.setAttribute('aria-label', label);
+
+window.addEventListener('pagehide', () => {
+  if (stream || pending) stopCamera();
 });
 
 new ResizeObserver(resize).observe(stage);
@@ -171,24 +150,27 @@ function animate(timestamp) {
   if (capture) {
     try {
       capture.scan(timestamp);
-      const label = capture.collecting ? 'Buscando el mejor fotograma…' : 'Mira al frente';
       const count = dancers.liveCount();
-      const message = ['Acércate y mira de frente a la cámara.', '¡Ya estás en la playa!', '¡Ya están en la playa!'][count];
-      if (captureLabel.textContent !== label) captureLabel.textContent = label;
+      const waiting = capture.collecting ? 'Buscando el mejor fotograma…' : 'Acércate y mira de frente a la cámara.';
+      const message = [waiting, '¡Ya estás en la playa!', '¡Ya están en la playa!'][count];
       if (status.textContent !== message) status.textContent = message;
     } catch (error) {
       console.error(error);
       detector?.close();
       detector = null;
-      stopCamera('La captura se interrumpió. Puedes volver a activar la cámara.');
+      stopCamera('La captura se interrumpió. Presiona C para reintentar.');
     }
   }
-  if (dancers && demoUntil && now >= demoUntil) {
+  if (demoUntil && now >= demoUntil) {
     demo(now, true);
-    status.textContent = 'Puedes probar la escena sin cámara.';
+    status.textContent = 'Cámara desactivada. Presiona C para activarla.';
   }
   dancers?.draw(now, delta);
   requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
 
+if (dancers) {
+  demo(clock(), true);
+  void startCamera();
+}
