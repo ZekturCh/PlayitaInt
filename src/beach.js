@@ -23,6 +23,7 @@ export function createBeach(canvas) {
   function draw(time) {
     const scale = Math.max(canvas.width / WIDTH, canvas.height / HEIGHT);
     const scaleY = canvas.height / HEIGHT;
+    const narrow = canvas.width / canvas.height < 1.5;
     const inset = (canvas.width - WIDTH * scale) / 2;
     context.setTransform(scale, 0, 0, scaleY, inset, 0);
     const sky = context.createLinearGradient(0, 0, 0, 325);
@@ -32,11 +33,10 @@ export function createBeach(canvas) {
     context.fillStyle = sky;
     context.fillRect(0, 0, WIDTH, HEIGHT);
 
-    ellipse(context, 598, 178, 116, 114, '#ffbd75');
-    ellipse(context, 598, 178, 95, 95, '#ffecab');
     cloud(context, 235 + Math.sin(time * 0.17) * 27, 129, 1);
     cloud(context, 874 + Math.sin(time * 0.15 + 1) * 33, 86, 0.75);
     cloud(context, 751 + Math.sin(time * 0.13) * 12, 194, 0.42);
+    drawDonofrioSun(context, 598, narrow ? 77 : 98, narrow ? 0.74 : 1, time);
     island(context, 67, 254, 1.08);
     island(context, 1002, 256, 0.9);
 
@@ -71,7 +71,6 @@ export function createBeach(canvas) {
     }
     context.globalAlpha = 1;
 
-    const narrow = canvas.width / canvas.height < 1.5;
     if (narrow) {
       palm(context, 430, 525, 0.79, time);
       palm(context, 790, 510, -0.66, time + 1);
@@ -213,5 +212,112 @@ function beachPlant(context, x, y, scale) {
     context.quadraticCurveTo(end * 0.8 + 12, -rise * 0.49, 0, 0);
     context.fill();
   }
+  context.restore();
+}
+
+
+function drawDonofrioSun(context, x, y, scale, time) {
+  context.save();
+  context.translate(x, y);
+  context.rotate(Math.sin(time * 0.55) * 0.025);
+  context.scale(scale, scale);
+  context.strokeStyle = '#723d32';
+  context.lineWidth = 1.7;
+  context.lineJoin = 'round';
+
+  // The pointed red rays and smiling face follow the supplied brand reference.
+  context.fillStyle = '#e71b24';
+  context.beginPath();
+  for (let index = 0; index < 38; index++) {
+    const angle = index * Math.PI / 19 - Math.PI / 2;
+    const radius = index % 2 ? 58 : 79 + (index % 3) * 2;
+    const px = Math.cos(angle) * radius;
+    const py = Math.sin(angle) * radius;
+    if (index === 0) context.moveTo(px, py);
+    else context.lineTo(px, py);
+  }
+  context.closePath();
+  context.fill();
+  context.stroke();
+
+  ellipse(context, 0, 0, 57, 56, '#ed1c24');
+  context.beginPath();
+  context.ellipse(0, 0, 57, 56, 0, 0, Math.PI * 2);
+  context.stroke();
+
+  // Eyebrows, eyes and freckles.
+  context.lineCap = 'round';
+  context.beginPath();
+  context.moveTo(-29, -31);
+  context.quadraticCurveTo(-19, -37, -10, -31);
+  context.moveTo(12, -31);
+  context.quadraticCurveTo(23, -36, 30, -29);
+  context.stroke();
+  ellipse(context, -20, -12, 5, 9, '#fffbed');
+  ellipse(context, 21, -12, 5, 9, '#fffbed');
+  ellipse(context, -18, -9, 2.3, 5, '#68392f');
+  ellipse(context, 23, -9, 2.3, 5, '#68392f');
+  for (const [px, py] of [[-39, -4], [-44, 2], [-40, 8]]) {
+    ellipse(context, px, py, 1.9, 2.5, '#fffbed');
+  }
+  context.beginPath();
+  context.moveTo(1, -15);
+  context.quadraticCurveTo(-4, 2, 4, 12);
+  context.moveTo(-34, 12);
+  context.bezierCurveTo(-16, 37, 13, 34, 33, 10);
+  context.moveTo(-36, 7);
+  context.lineTo(-32, 17);
+  context.stroke();
+
+  // A yellow ice lolly and the mascot's arm.
+  context.fillStyle = '#f1b43a';
+  context.beginPath();
+  context.roundRect(29, 66, 9, 16, 4);
+  context.fill();
+  context.stroke();
+  context.fillStyle = '#dc1722';
+  context.beginPath();
+  context.moveTo(11, 38);
+  context.bezierCurveTo(-16, 60, -18, 75, 7, 77);
+  context.quadraticCurveTo(24, 79, 47, 67);
+  context.quadraticCurveTo(53, 60, 45, 59);
+  context.bezierCurveTo(22, 63, -1, 76, -3, 64);
+  context.quadraticCurveTo(-1, 55, 13, 49);
+  context.closePath();
+  context.fill();
+  context.stroke();
+
+  context.save();
+  context.translate(28, 34);
+  context.rotate(-0.1);
+  context.fillStyle = '#f5bb24';
+  context.beginPath();
+  context.moveTo(-19, 31);
+  context.lineTo(-20, -19);
+  context.quadraticCurveTo(-20, -38, -6, -37);
+  context.quadraticCurveTo(-2, -50, 9, -42);
+  context.quadraticCurveTo(23, -36, 23, -20);
+  context.lineTo(25, 31);
+  context.closePath();
+  context.fill();
+  context.stroke();
+  context.fillStyle = '#ffdc45';
+  context.beginPath();
+  context.moveTo(-15, -18);
+  context.quadraticCurveTo(-10, -29, -4, -28);
+  context.lineTo(-3, 26);
+  context.lineTo(-12, 28);
+  context.closePath();
+  context.fill();
+  context.strokeStyle = '#fff3a6';
+  context.lineWidth = 2.4;
+  context.beginPath();
+  context.moveTo(14, -16);
+  context.lineTo(16, 15);
+  context.stroke();
+  for (const [px, py] of [[-10, -16], [-8, -2], [1, 18]]) {
+    ellipse(context, px, py, 1.4, 2.8, '#fff5c9');
+  }
+  context.restore();
   context.restore();
 }

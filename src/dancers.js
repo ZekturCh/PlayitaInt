@@ -1,8 +1,9 @@
 import * as THREE from 'three';
+import brandReference from './assets/donofrio-reference.png';
 
 const DANCE_LENGTH = 11;
 const TAU = Math.PI * 2;
-const COLORS = [0xe76549, 0x2baca0, 0x8d75ce];
+const COLORS = [0xffed00, 0xffe219, 0xffe82d];
 const SKINS = [0xe4a16f, 0xb97950, 0xf3bc8d];
 const sphere = new THREE.SphereGeometry(1, 28, 20);
 const facePlane = new THREE.PlaneGeometry(0.82, 1.03);
@@ -33,6 +34,7 @@ export function createDancers(canvas) {
   ink.fillRect(0, 0, 96, 96);
   const shadowTexture = new THREE.CanvasTexture(shadowCanvas);
   const demoFace = paintDemoFace();
+  const shirtPrint = createShirtPrint();
 
   let visibleWidth = 6;
   let nextColor = 0;
@@ -52,7 +54,7 @@ export function createDancers(canvas) {
 
   function add(face, now, { demo = false, idle = false } = {}) {
     const color = demo ? 0 : nextColor++ % COLORS.length;
-    const avatar = createAvatar(face || demoFace, COLORS[color], SKINS[color], demo, shadowTexture);
+    const avatar = createAvatar(face || demoFace, COLORS[color], SKINS[color], demo, shadowTexture, shirtPrint);
     Object.assign(avatar, { start: now, demo, idle, x: 0 });
     dancers.push(avatar);
     scene.add(avatar.root);
@@ -88,7 +90,7 @@ export function createDancers(canvas) {
   return { resize, draw, add, clear, liveCount: () => dancers.filter(dancer => !dancer.demo).length };
 }
 
-function createAvatar(face, shirtColor, skinColor, demo, shadowTexture) {
+function createAvatar(face, shirtColor, skinColor, demo, shadowTexture, shirtPrint) {
   const root = new THREE.Group();
   const body = new THREE.Group();
   const head = new THREE.Group();
@@ -106,17 +108,26 @@ function createAvatar(face, shirtColor, skinColor, demo, shadowTexture) {
   const skin = clay(skinColor, true);
   const headSkin = clay(skinColor);
   const shirt = clay(shirtColor, true);
-  const shorts = clay(0x18494f, true);
-  const cream = clay(0xffe6b2, true);
-  const sole = clay(0xe98855, true);
+  const shorts = clay(0xffd21b, true);
+  const sole = clay(0x0878ab, true);
+  const blue = clay(0x0069a8, true);
+  const red = clay(0xeb2534, true);
   const hair = clay(0x432e38);
 
   oval(body, shirt, 0, 1.13, 0, 0.4, 0.49, 0.26);
-  oval(body, cream, 0, 1.32, 0.17, 0.14, 0.18, 0.12);
-  oval(body, shorts, 0, 0.81, 0.015, 0.37, 0.24, 0.25);
+  oval(body, skin, 0, 1.47, 0.15, 0.115, 0.15, 0.125);
+  for (const side of [-1, 1]) {
+    const collar = oval(body, blue, side * 0.105, 1.43, 0.205, 0.055, 0.115, 0.025);
+    collar.rotation.z = side * 0.55;
+  }
+  addShirtBadge(body, shirtPrint, materials, bodyMaterials);
+  for (const y of [1.31, 0.97]) {
+    oval(body, blue, 0, y, 0.255, 0.015, 0.015, 0.013);
+  }
+  oval(body, shorts, 0, 0.78, 0.015, 0.35, 0.17, 0.225);
   for (const side of [-1, 1]) {
     for (let index = 0; index < 3; index++) {
-      const flower = oval(body, cream, side * (0.19 + index * 0.03), 1.35 - index * 0.16, 0.211, 0.052, 0.025, 0.011);
+      const flower = oval(body, red, side * (0.24 + index * 0.025), 1.36 - index * 0.17, 0.211, 0.036, 0.016, 0.011);
       flower.rotation.z = side * 0.6;
     }
   }
@@ -136,9 +147,12 @@ function createAvatar(face, shirtColor, skinColor, demo, shadowTexture) {
     leg.position.set(side * 0.17, 0.79, 0);
     body.add(leg);
     oval(leg, shorts, 0, -0.115, 0, 0.171, 0.25, 0.177);
+    oval(leg, blue, side * 0.13, -0.15, 0.046, 0.027, 0.17, 0.1);
     oval(leg, skin, 0, -0.43, 0, 0.104, 0.27, 0.104);
     oval(leg, sole, 0, -0.72, 0.095, 0.14, 0.07, 0.24);
-    oval(leg, cream, 0, -0.672, 0.095, 0.134, 0.075, 0.224);
+    oval(leg, skin, 0, -0.672, 0.095, 0.12, 0.075, 0.21);
+    const strap = oval(leg, blue, 0, -0.625, 0.16, 0.125, 0.024, 0.05);
+    strap.rotation.z = side * 0.2;
     legs.push(leg);
     oval(head, headSkin, side * 0.413, -0.025, 0.035, 0.103, 0.144, 0.096);
   }
@@ -260,4 +274,42 @@ function paintDemoFace() {
   ctx.quadraticCurveTo(128, 230, 155, 220);
   ctx.stroke();
   return canvas;
+}
+
+
+function createShirtPrint() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 768;
+  canvas.height = 320;
+  const context = canvas.getContext('2d');
+  context.fillStyle = '#ffed00';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const image = new Image();
+  image.onload = () => {
+    context.drawImage(image, 64, 218, 182, 78, 0, 0, canvas.width, canvas.height);
+    texture.needsUpdate = true;
+  };
+  image.src = brandReference;
+  return texture;
+}
+
+const badgeGeometry = new THREE.PlaneGeometry(0.5, 0.19, 20, 8);
+const badgePositions = badgeGeometry.attributes.position;
+for (let index = 0; index < badgePositions.count; index++) {
+  const x = badgePositions.getX(index);
+  const y = badgePositions.getY(index) + 0.04;
+  const depth = 0.26 * Math.sqrt(1 - (x / 0.4) ** 2 - (y / 0.49) ** 2);
+  badgePositions.setZ(index, depth + 0.006);
+}
+badgeGeometry.computeVertexNormals();
+
+function addShirtBadge(body, texture, materials, bodyMaterials) {
+  const material = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.78 });
+  materials.push(material);
+  bodyMaterials.push(material);
+  const badge = new THREE.Mesh(badgeGeometry, material);
+  badge.position.y = 1.17;
+  body.add(badge);
 }
