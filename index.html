@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#142c33">
+  <meta name="description" content="Entra en escena y baila en una playa de caricatura.">
+  <link rel="icon" href="%BASE_URL%icon.png">
+  <title>Club Marea · Baila en la playa</title>
+</head>
+<body>
+  <main class="app">
+    <header class="masthead">
+      <a class="wordmark" href="./"><span class="mark" aria-hidden="true">✳</span> CLUB MAREA</a>
+      <button id="fullscreen" class="text-button" type="button" aria-label="Activar pantalla completa"><span aria-hidden="true">⛶</span> <span id="fullscreen-label">Pantalla completa</span></button>
+    </header>
+
+    <section aria-labelledby="title">
+      <div class="intro">
+        <h1 id="title">Baila en la playa<span>.</span></h1>
+        <p>Mira a la cámara y conviértete en un personaje de la isla.</p>
+      </div>
+      <div id="stage" class="stage" aria-label="Playa animada con personajes bailando">
+        <canvas id="beach" aria-hidden="true"></canvas>
+        <canvas id="dancers" aria-hidden="true"></canvas>
+        <div class="mode"><span id="mode-dot"></span><span id="mode-label">Modo demo</span></div>
+        <div class="capture" id="capture" hidden>
+          <video id="camera" autoplay muted playsinline aria-hidden="true"></video>
+          <span id="capture-label">Mira al frente</span>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="actions">
+          <button class="primary" id="camera-button" type="button">Activar cámara</button>
+          <button class="secondary" id="demo-button" type="button">Ver baile demo <span aria-hidden="true">↗</span></button>
+        </div>
+        <div class="feedback">
+          <p id="status" role="status">Puedes probar la escena sin cámara.</p>
+          <p class="privacy">Los rostros se procesan en este equipo.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
+
